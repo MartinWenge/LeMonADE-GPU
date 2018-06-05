@@ -524,7 +524,4 @@ public:
         mnStepsBetweenSortings = rnStepsBetweenSortings;
     }
     inline int64_t getStepsBetweenSortings( void ) const{ return mnStepsBetweenSortings; }
-
-    /* for benchmarking purposes */
-    std::chrono::time_point< std::chrono::high_resolution_clock > mtCopyBack0;
 };

@@ -1416,7 +1416,6 @@ UpdaterGPUScBFM_AB_Type< T_UCoordinateCuda >::UpdaterGPUScBFM_AB_Type()
      * the output as "Info" log level
      */
     mLog.file( __FILENAME__ );
-    mLog.deactivate( "Benchmark" );
     mLog.deactivate( "Check"     );
     mLog.deactivate( "Error"     );
     mLog.deactivate( "Info"      );
@@ -3070,21 +3069,6 @@ void UpdaterGPUScBFM_AB_Type< T_UCoordinateCuda >::runSimulationOnGPU
     cudaEventCreate( &tOneGpuLoop0 );
     cudaEventCreate( &tOneGpuLoop1 );
 
-    cudaEvent_t tGpu0, tGpu1;
-    if ( mLog.isActive( "Benchmark" ) )
-    {
-        cudaEventCreate( &tGpu0 );
-        cudaEventCreate( &tGpu1 );
-        cudaEventRecord( tGpu0, mStream );
-    }
-
-    cudaEvent_t tSort0, tSort1;
-    if ( mLog.isActive( "Benchmark" ) )
-    {
-        cudaEventCreate( &tSort0 );
-        cudaEventCreate( &tSort1 );
-    }
-
     std::vector< uint64_t > nSpeciesChosen( nSpecies ,0 );
 
     /* run simulation */
@@ -3093,23 +3077,8 @@ void UpdaterGPUScBFM_AB_Type< T_UCoordinateCuda >::runSimulationOnGPU
         if ( mUsePeriodicMonomerSorting && ( mAge % mnStepsBetweenSortings == 0 ) )
         {
             mLog( "Info" ) << "Resorting at age / step " << mAge << "\n";
-            if ( mLog.isActive( "Benchmark" ) )
-                cudaEventRecord( tSort0, mStream );
-
             doSpatialSorting();
-
-            if ( mLog.isActive( "Benchmark" ) )
-            {
-                cudaEventRecord( tSort1, mStream );
-                cudaEventSynchronize( tSort1 );  // basically a StreamSynchronize
-                float milliseconds = 0;
-                cudaEventElapsedTime( & milliseconds, tSort0, tSort1 );
-                std::stringstream sBuffered;
-                sBuffered << "tSort = " << milliseconds / 1000. << "s\n";
-                mLog( "Benchmark" ) << sBuffered.str();
-            }
         }
-
         if ( useOverflowChecks )
         {
             /**
@@ -3424,19 +3393,6 @@ void UpdaterGPUScBFM_AB_Type< T_UCoordinateCuda >::runSimulationOnGPU
             }
         } // iSubstep
     } // iStep
-
-    if ( mLog.isActive( "Benchmark" ) )
-    {
-        // https://devblogs.nvidia.com/how-implement-performance-metrics-cuda-cc/#disqus_thread
-        cudaEventRecord( tGpu1, mStream );
-        cudaEventSynchronize( tGpu1 );  // basically a StreamSynchronize
-        float milliseconds = 0;
-        cudaEventElapsedTime( & milliseconds, tGpu0, tGpu1 );
-        std::stringstream sBuffered;
-        sBuffered << "tGpuLoop = " << milliseconds / 1000. << "s\n";
-        mLog( "Benchmark" ) << sBuffered.str();
-    }
-
     if ( mLog.isActive( "Stats" ) && dpFiltered != NULL )
     {
         if ( mnElementsInGroup.size() <= 8 )
@@ -3525,25 +3481,20 @@ void UpdaterGPUScBFM_AB_Type< T_UCoordinateCuda >::runSimulationOnGPU
 
         CUDA_ERROR( cudaFree( dpFiltered ) );
     }
-
+    
     doCopyBack();
-
-    if ( mLog.isActive( "Benchmark" ) )
-    {
-        std::clock_t const t1 = std::clock();
-        double const dt = float(t1-t0) / CLOCKS_PER_SEC;
-        mLog( "Benchmark" )
-        << "run time (GPU): " << nMonteCarloSteps << "\n"
-        << "mcs = " << nMonteCarloSteps  << "  speed [performed monomer try and move/s] = MCS*N/t: "
-        << nMonteCarloSteps * ( mnAllMonomers / dt )  << "     runtime[s]:" << dt << "\n";
-    }
+    
+    std::clock_t const t1 = std::clock();
+    double const dt = float(t1-t0) / CLOCKS_PER_SEC;
+    mLog( "Info" )
+    << "run time (GPU): " << nMonteCarloSteps << "\n"
+    << "mcs = " << nMonteCarloSteps  << "  speed [performed monomer try and move/s] = MCS*N/t: "
+    << nMonteCarloSteps * ( mnAllMonomers / dt )  << "     runtime[s]:" << dt << "\n";
 }
 
 template< typename T_UCoordinateCuda >
 void UpdaterGPUScBFM_AB_Type< T_UCoordinateCuda >::doCopyBack()
 {
-    mtCopyBack0 = std::chrono::high_resolution_clock::now();
-
     /* all MCS are done- copy information back from GPU to host */
     if ( mLog.isActive( "Check" ) )
     {
@@ -3571,27 +3522,7 @@ void UpdaterGPUScBFM_AB_Type< T_UCoordinateCuda >::doCopyBack()
 
     if ( useOverflowChecks )
     {
-        cudaEvent_t tOverflowCheck0, tOverflowCheck1;
-        if ( mLog.isActive( "Benchmark" ) )
-        {
-            cudaEventCreate( &tOverflowCheck0 );
-            cudaEventCreate( &tOverflowCheck1 );
-            cudaEventRecord( tOverflowCheck0, mStream );
-        }
-
         findAndRemoveOverflows( false );
-
-        if ( mLog.isActive( "Benchmark" ) )
-        {
-            // https://devblogs.nvidia.com/how-implement-performance-metrics-cuda-cc/#disqus_thread
-            cudaEventRecord( tOverflowCheck1, mStream );
-            cudaEventSynchronize( tOverflowCheck1 );  // basically a StreamSynchronize
-            float milliseconds = 0;
-            cudaEventElapsedTime( & milliseconds, tOverflowCheck0, tOverflowCheck1 );
-            std::stringstream sBuffered;
-            sBuffered << "tOverflowCheck = " << milliseconds / 1000. << "s\n";
-            mLog( "Benchmark" ) << sBuffered.str();
-        }
     }
 
 #if defined( USE_GPU_FOR_OVERHEAD )

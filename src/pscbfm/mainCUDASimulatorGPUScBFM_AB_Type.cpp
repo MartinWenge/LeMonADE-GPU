@@ -157,10 +157,9 @@ int main( int argc, char ** argv )
         pUpdaterGpu->setGpu( iGpuToUse );
         if ( iRngToUse != -1 )
             pUpdaterGpu->setRng( iRngToUse );
-        pUpdaterGpu->activateLogging( "Benchmark" );
         pUpdaterGpu->activateLogging( "Error"     );
         //pUpdaterGpu->activateLogging( "Stats"      );
-        //pUpdaterGpu->activateLogging( "Info"      );
+        pUpdaterGpu->activateLogging( "Info"      );
         if ( nSplitColors > 0 )
             pUpdaterGpu->setSplitColors( nSplitColors );
 

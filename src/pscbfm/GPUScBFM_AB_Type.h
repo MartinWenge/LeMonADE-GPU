@@ -91,7 +91,6 @@ public:
       mSetStepsBetweenSortings( false ),
       mnSplitColors( 0 )
     {
-        mLog.deactivate( "Benchmark" );
         mLog.deactivate( "Check"     );
         mLog.deactivate( "Error"     );
         mLog.deactivate( "Info"      );
@@ -195,7 +194,6 @@ public:
         auto const tInit1 = std::chrono::high_resolution_clock::now();
         std::stringstream sBuffered;
         sBuffered << "tInit = " << std::chrono::duration<double>( tInit1 - tInit0 ).count() << "s\n";
-        mLog( "Benchmark" ) << sBuffered.str();
     }
 
     /**
@@ -214,8 +212,7 @@ public:
         mLog( "Info" ) << "[" << __FILENAME__ << "] start simulation on GPU\n";
 
         mUpdaterGpu.setAge( mIngredients.modifyMolecules().getAge() );
-        mUpdaterGpu.runSimulationOnGPU( mnSteps ); // sets mtCopyBack0
-        auto const tCopyBack0 = mUpdaterGpu.mtCopyBack0;
+        mUpdaterGpu.runSimulationOnGPU( mnSteps ); 
 
         // copy back positions of all monomers
         mLog( "Info" ) << "[" << __FILENAME__ << "] copy back monomers from GPU updater to CPU 'molecules' to be used with analyzers\n";
@@ -246,13 +243,6 @@ public:
             << " passed time " << dt << " [s] with " << mnSteps << " MCS\n";
         }
 
-        if ( mLog.isActive( "Benchmark" ) )
-        {
-            auto const tCopyBack1 = std::chrono::high_resolution_clock::now();
-            std::stringstream sBuffered;
-            sBuffered << "tCopyback = " << std::chrono::duration<double>( tCopyBack1 - tCopyBack0 ).count() << "s\n";
-            mLog( "Benchmark" ) << sBuffered.str();
-        }
         return true;
     }
 
