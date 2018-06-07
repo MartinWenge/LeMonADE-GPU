@@ -64,3 +64,9 @@ ENDIF(CMAKE_BUILD_TYPE STREQUAL "Release")
 
 ## ###############  System Creators ############# ##
 add_subdirectory(src)
+
+## ###############    Test Cases    ############# ##
+# Includes Catch in the project:
+add_subdirectory(tests)
+include_directories(${CATCH_INCLUDE_DIR} ${COMMON_INCLUDES})
+enable_testing(true)  # Enables unit-testing.
