@@ -15,10 +15,12 @@ target_include_directories(Catch INTERFACE ${CATCH_INCLUDE_DIR})
 include_directories(
     ${CMAKE_SOURCE_DIR}/src/ 
     ${CMAKE_SOURCE_DIR}/src/pscbfm 
-    ${CMAKE_SOURCE_DIR}/src/pscbfm/rngs/  
-    ${CMAKE_SOURCE_DIR}/include/extern/Fundamental/ 
-    ${CUDA_INCLUDE_DIRS} 
-    ${LEMONADE_INCLUDE_DIR}
+    ${CMAKE_SOURCE_DIR}/src/pscbfm/rngs/
+    ${CUDA_INCLUDE_DIRS}
+)
+
+cuda_add_library( pscbfmUpdater
+    ${CMAKE_SOURCE_DIR}/src/pscbfm/UpdaterGPUScBFM_AB_Type.cu
 )
 
 # Make test executable
@@ -26,11 +28,11 @@ include_directories(
 # we could organize the test cases in subgroups if we have enough of them
 set(TEST_SOURCES 
     ${CMAKE_CURRENT_SOURCE_DIR}/lemonadeGPUTest-main.cpp
-    #${CMAKE_CURRENT_SOURCE_DIR}/testGPUScBFM_AB_Type.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/testGPUScBFM_AB_Type.cpp
 )
 
-add_executable(tests ${TEST_SOURCES})
-target_link_libraries(tests Catch)
+cuda_add_executable(tests ${TEST_SOURCES})
+target_link_libraries(tests Catch LeMonADE pscbfmUpdater ${CUDA_curand_LIBRARY} cuda)
 
 MESSAGE("Run test with: make runtest")
 ADD_CUSTOM_TARGET(
